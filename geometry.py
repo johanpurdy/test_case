@@ -1,12 +1,5 @@
 import turtle
 
-# Координаты многоугольников (списки кортежей)
-polygons = [
-    [(0, 0), (100, 0), (100, 100), (0, 100)],
-    [(50, 50), (150, 50), (150, 150), (50, 150)],
-    [(80, -20), (180, -20), (130, 80)]
-]
-
 
 def get_intersection(p1, p2, p3, p4):
     """Находит точку пересечения двух отрезков"""
@@ -41,3 +34,38 @@ def is_inside(p, poly):
            (x < (p2x - p1x) * (y - p1y) / (p2y - p1y) + p1x):
             inside = not inside
     return inside
+
+
+def draw():
+    t = turtle.Turtle()
+    t.speed(0)
+
+    # 1. Сначала рисуем исходные фигуры тонкими линиями
+    t.pencolor("lightgray")
+    for poly in polygons:
+        t.up()
+        t.goto(poly[0])
+        t.down()
+        for p in poly[1:] + [poly[0]]:
+            t.goto(p)
+
+    # 2. Ищем внешние сегменты
+    t.pencolor("red")
+    t.pensize(3)
+    for i, poly in enumerate(polygons):
+        for j in range(len(poly)):
+            p1, p2 = poly[j], poly[(j + 1) % len(poly)]
+            # Разбиваем сторону на мелкие отрезки для проверки
+            steps = 50 
+            for s in range(steps):
+                curr = (p1[0] + (p2[0]-p1[0])*s/steps, p1[1] + (p2[1]-p1[1])*s/steps)
+                next_p = (p1[0] + (p2[0]-p1[0])*(s+1)/steps, p1[1] + (p2[1]-p1[1])*(s+1)/steps)
+                
+                # Если середина отрезка не внутри других фигур — рисуем
+                mid = ((curr[0] + next_p[0])/2, (curr[1] + next_p[1])/2)
+                if not any(is_inside(mid, p) for k, p in enumerate(polygons) if k != i):
+                    t.up(); t.goto(curr); t.down(); t.goto(next_p)
+    turtle.done()
+
+
+draw()

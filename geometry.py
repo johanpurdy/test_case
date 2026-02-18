@@ -3,7 +3,7 @@ import turtle
 
 
 def get_intersection(p1, p2, p3, p4):
-    """Находит точку пересечения двух отрезков"""
+    '''Находит точку пересечения двух отрезков'''
     x1, y1 = p1
     x2, y2 = p2
     x3, y3 = p3
@@ -41,7 +41,7 @@ def draw_clean_outline(polygons):
     t.speed(0)
     t.hideturtle()
 
-    t.pencolor("lightgray")
+    t.pencolor('lightgray')
     for poly in polygons:
         t.up()
         t.goto(poly[0])
@@ -49,7 +49,7 @@ def draw_clean_outline(polygons):
         for p in poly[1:] + [poly[0]]:
             t.goto(p)
 
-    t.pencolor("red")
+    t.pencolor('red')
     t.pensize(3)
     valid_segments = []
 
@@ -91,11 +91,11 @@ def draw_clean_outline(polygons):
 
 
 def get_input_polygons():
-    count = int(input("Сколько фигур будет? "))
+    count = int(input('Сколько фигур будет? '))
     polygons = []
-    print(f"Введите {count} список(а) координат в формате [(x1, y1), (x2, y2), ...]:")
+    print(f'Введите {count} список(а) координат в формате [(x1, y1), (x2, y2), ...]:')
     for i in range(count):
-        raw_data = input(f"Фигура {i+1}: ")
+        raw_data = input(f'Фигура {i+1}: ')
         poly = ast.literal_eval(raw_data)
         polygons.append(poly)
     return polygons
@@ -113,25 +113,19 @@ test2 = [
 ]
 
 test3 = [
-    [(0, 0), (100, 0), (100, 100), (0, 100)],
-    [(20, 20), (80, 20), (80, 80), (20, 80)],
-    [(40, 40), (60, 40), (60, 60), (40, 60)]
-]
-
-test4 = [
     [(0, 40), (200, 40), (200, 60), (0, 60)],
     [(0, 80), (200, 80), (200, 100), (0, 100)],
     [(40, 0), (60, 0), (60, 200), (40, 200)],
     [(120, 0), (140, 0), (140, 200), (120, 200)]
 ]
 
-test5 = [
+test4 = [
     [(0, 0), (100, 0), (100, 100), (0, 100)],
     [(50, 50), (150, 50), (150, 150), (50, 150)],
     [(100, 100), (200, 100), (200, 200), (100, 200)]
 ]
 
-test6 = [
+test5 = [
     [(0, 0), (40, 0), (40, 40), (0, 40)],
     [(30, 30), (70, 30), (70, 70), (30, 70)],
     [(60, 60), (100, 60), (100, 100), (60, 100)],
@@ -139,20 +133,30 @@ test6 = [
     [(45, 45), (85, 45), (85, 85), (45, 85)]
 ]
 
-test7 = [
+test6 = [
     [(0, 50), (200, 50), (200, 70), (0, 70)],
     [(80, 0), (120, 0), (120, 150), (80, 150)]
 ]
 
-test8 = [
-    [(0, 0), (200, 0), (200, 150), (0, 150)],
-    [(20, 20), (180, 20), (180, 130), (20, 130)],
-    [(20, 20), (60, 20), (60, 60), (20, 60)],
-    [(140, 90), (180, 90), (180, 130), (140, 130)]
-]
+tests = {
+    'Прямоугольник с отверстием': test1,
+    'Три вертикальных полосы': test2,
+    'Сетка': test3,
+    'Лестница': test4,
+    'Сложная композиция': test5,
+    'Перекрестие': test6,
 
 
-polygons = #test
-final_points = draw_clean_outline(polygons)
-print(f"Итоговых точек: {len(final_points)}")
-turtle.done()
+}
+
+for name, test_polygons in tests.items():
+    print(f'\n {name} ')
+    print(f'Фигур: {len(test_polygons)}')
+
+    final_points = draw_clean_outline(test_polygons)
+    print(
+        f'Список точек: {final_points}. Количество точек: {len(final_points)}'
+    )
+
+    input('Нажмите Enter для следующего теста...')
+    turtle.clearscreen()

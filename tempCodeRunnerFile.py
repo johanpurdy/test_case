@@ -79,21 +79,15 @@ def draw_clean_outline(polygons):
                 start, end = splits[s], splits[s+1]
                 mid = ((start[0] + end[0])/2, (start[1] + end[1])/2)
 
-                outside = False
-                for point in [
-                    (mid[0] + 0.1, mid[1]), (mid[0] - 0.1, mid[1]),
-                    (mid[0], mid[1] + 0.1), (mid[0], mid[1] - 0.1)
-                    ]:
-                    inside_any = False
-                    for poly_check in polygons:
-                        if is_inside(point, poly_check):
-                            inside_any = True
-                            break
-                    if not inside_any:
-                        outside = True
+                is_external = True
+                for k, poly_check in enumerate(polygons):
+        # Если середина отрезка лежит СТРОГО внутри любого другого полигона,
+        # значит этот отрезок — внутренняя перегородка.
+                    if i != k and is_inside(mid, poly_check):
+                        is_external = False
                         break
-
-                if outside:
+    
+                if is_external:
                     valid_segments.append((start, end))
                     t.up()
                     t.goto(start)
@@ -116,10 +110,10 @@ def get_input_polygons():
 
 
 polygons = [
-    [(0, 0), (100, 0), (100, 100), (0, 100)],        # большой квадрат
-    [(20, 20), (120, 20), (120, 120), (20, 120)],    # смещённый квадрат
-    [(0, 50), (150, 50), (150, 60), (0, 60)],        # длинная горизонталь
-    [(50, 0), (50, 150), (60, 150), (60, 0)]         # длинная вертикаль
+    [(0, 0), (100, 0), (100, 100), (0, 100)],
+    [(20, 20), (120, 20), (120, 120), (20, 120)],
+    [(0, 50), (150, 50), (150, 60), (0, 60)],
+    [(50, 0), (50, 150), (60, 150), (60, 0)]
 ]
 final_points = draw_clean_outline(polygons)
 print(f"Итоговые точки контура: {final_points}. Колличество: {len(final_points)}")

@@ -150,7 +150,7 @@ tests = {
 }
 
 for name, test_polygons in tests.items():
-    print(f'\n {name} ')
+    print(f'{name}')
     print(f'Фигур: {len(test_polygons)}')
 
     final_points = draw_clean_outline(test_polygons)

@@ -36,36 +36,76 @@ def is_inside(p, poly):
     return inside
 
 
-def draw():
+def draw_clean_outline(polygons):
     t = turtle.Turtle()
     t.speed(0)
+    t.hideturtle()
 
-    # 1. Сначала рисуем исходные фигуры тонкими линиями
+    # 1. Фоновая отрисовка (серый)
     t.pencolor("lightgray")
     for poly in polygons:
         t.up()
-        t.goto(poly[0])
+        t.goto(poly[0]) 
         t.down()
         for p in poly[1:] + [poly[0]]:
             t.goto(p)
 
-    # 2. Ищем внешние сегменты
+    # 2. Поиск и отрисовка внешнего контура (красный)
     t.pencolor("red")
     t.pensize(3)
+    valid_segments = []
+
     for i, poly in enumerate(polygons):
         for j in range(len(poly)):
             p1, p2 = poly[j], poly[(j + 1) % len(poly)]
-            # Разбиваем сторону на мелкие отрезки для проверки
-            steps = 50 
-            for s in range(steps):
-                curr = (p1[0] + (p2[0]-p1[0])*s/steps, p1[1] + (p2[1]-p1[1])*s/steps)
-                next_p = (p1[0] + (p2[0]-p1[0])*(s+1)/steps, p1[1] + (p2[1]-p1[1])*(s+1)/steps)
+            splits = [p1, p2]
+            for k, other_poly in enumerate(polygons):
+                if i == k:
+                    continue
+                for m in range(len(other_poly)):
+                    p3, p4 = (
+                        other_poly[m],
+                        other_poly[(m + 1) % len(other_poly)]
+                    )
+                    inter = get_intersection(p1, p2, p3, p4)
+                    if inter:
+                        splits.append(inter)
+
+            # Сортируем точки вдоль линии p1 -> p2
+            splits = sorted(
+                list(set(splits)),
+                key=lambda p:
+                (p[0]-p1[0])**2 + (p[1]-p1[1])**2
+            )
+
+            # Проверяем каждый кусок между точками разрыва
+            for s in range(len(splits) - 1):
+                start, end = splits[s], splits[s+1]
+                mid = ((start[0] + end[0])/2, (start[1] + end[1])/2)
                 
-                # Если середина отрезка не внутри других фигур — рисуем
-                mid = ((curr[0] + next_p[0])/2, (curr[1] + next_p[1])/2)
+                # Если середина отрезка не внутри других фигур — рисуем и сохраняем
                 if not any(is_inside(mid, p) for k, p in enumerate(polygons) if k != i):
-                    t.up(); t.goto(curr); t.down(); t.goto(next_p)
-    turtle.done()
+                    valid_segments.append((start, end))
+                    t.up()
+                    t.goto(start)
+                    t.down()
+                    t.goto(end)
 
+    # Собираем итоговый список точек через list comprehension
+    result = list(dict.fromkeys([pt for seg in valid_segments for pt in seg]))
+    return result
 
-draw()
+# Пример данных
+squares = [
+    [(-100, -100), (100, -100), (100, 100), (-100, 100)],
+    [(0, 0), (150, 0), (150, 150), (0, 150)]
+]
+triangels = [
+    [(0, 0), (100, 0), (100, 100), (0, 100)],
+    [(50, 50), (150, 50), (150, 150), (50, 150)],
+    [(80, -20), (180, -20), (130, 80)]
+]
+
+final_points = draw_clean_outline(triangels)
+print("Итоговые точки контура:", final_points)
+turtle.done()

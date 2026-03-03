@@ -1,25 +1,24 @@
-import ast
 import turtle
+import math
+
+from test_figure import all_tests
+SCALE = 2.5
+DRAW_SPEED = 3
+EPSILON = 1e-5
 
 
 def get_intersection(p1, p2, p3, p4):
-    '''Находит точку пересечения двух отрезков'''
     x1, y1 = p1
     x2, y2 = p2
     x3, y3 = p3
     x4, y4 = p4
-
     det = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
-    if det == 0:
+    if abs(det) < EPSILON:
         return None
-
-    inter_param_1 = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / det
-    inter_param_2 = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / det
-
-    if 0 <= inter_param_1 <= 1 and 0 <= inter_param_2 <= 1:
-        x = x1 + inter_param_1 * (x2 - x1)
-        y = y1 + inter_param_1 * (y2 - y1)
-        return (x, y)
+    it1 = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / det
+    it2 = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / det
+    if 0 <= it1 <= 1 and 0 <= it2 <= 1:
+        return (x1 + it1 * (x2 - x1), y1 + it1 * (y2 - y1))
     return None
 
 
@@ -31,132 +30,140 @@ def is_inside(p, poly):
         p1x, p1y = poly[i]
         p2x, p2y = poly[(i + 1) % n]
         if ((p1y > y) != (p2y > y)) and \
-           (x < (p2x - p1x) * (y - p1y) / (p2y - p1y) + p1x):
+           (x < (p2x - p1x) * (y - p1y) / (p2y - p1y) + p1x - EPSILON):
             inside = not inside
     return inside
 
 
-def draw_clean_outline(polygons):
-    t = turtle.Turtle()
-    t.speed(0)
-    t.hideturtle()
+def get_polygon_area(poly):
+    area = 0
+    for i in range(len(poly)):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % len(poly)]
+        area += (x1 * y2 - x2 * y1)
+    return area / 2
 
-    t.pencolor('lightgray')
+
+def find_loops(segments):
+    loops = []
+    unused = list(segments)
+    while unused:
+        current_loop = []
+        seg = unused.pop(0)
+        p_start, p_end = seg
+        current_loop.append(p_start)
+        last_p = p_end
+        while True:
+            found = False
+            for i, (s1, s2) in enumerate(unused):
+                if math.dist(last_p, s1) < EPSILON:
+                    current_loop.append(s1)
+                    last_p = s2
+                    unused.pop(i)
+                    found = True
+                    break
+                elif math.dist(last_p, s2) < EPSILON:
+                    current_loop.append(s2)
+                    last_p = s1
+                    unused.pop(i)
+                    found = True
+                    break
+            if not found or math.dist(last_p, p_start) < EPSILON:
+                break
+        loops.append(current_loop)
+    return loops
+
+
+def solve_and_draw(polygons):
+    screen = turtle.Screen()
+    t = turtle.Turtle()
+    t.speed(DRAW_SPEED)
+
+    t.pensize(1)
+    t.pencolor("lightgray")
     for poly in polygons:
         t.up()
-        t.goto(poly[0])
+        t.goto(poly[0][0] * SCALE, poly[0][1] * SCALE)
         t.down()
-        for p in poly[1:] + [poly[0]]:
-            t.goto(p)
+        for x, y in poly[1:] + [poly[0]]:
+            t.goto(x * SCALE, y * SCALE)
 
-    t.pencolor('red')
-    t.pensize(3)
     valid_segments = []
-
     for i, poly in enumerate(polygons):
         for j in range(len(poly)):
             p1, p2 = poly[j], poly[(j + 1) % len(poly)]
             splits = [p1, p2]
-            for k, other_poly in enumerate(polygons):
+            for k, other in enumerate(polygons):
                 if i == k:
                     continue
-                for m in range(len(other_poly)):
-                    p3, p4 = (
-                        other_poly[m],
-                        other_poly[(m + 1) % len(other_poly)]
+                for m in range(len(other)):
+                    inter = get_intersection(
+                        p1,
+                        p2,
+                        other[m],
+                        other[(m + 1) % len(other)]
                     )
-                    inter = get_intersection(p1, p2, p3, p4)
                     if inter:
                         splits.append(inter)
 
             splits = sorted(
                 list(set(splits)),
-                key=lambda p:
-                (p[0]-p1[0])**2 + (p[1]-p1[1])**2
+                key=lambda p: (p[0]-p1[0])**2 + (p[1]-p1[1])**2
             )
-
             for s in range(len(splits) - 1):
                 start, end = splits[s], splits[s+1]
                 mid = ((start[0] + end[0])/2, (start[1] + end[1])/2)
-
-                if not any(is_inside(mid, p) for k, p in enumerate(polygons) if k != i):
+                if not any(
+                    is_inside(mid, p) for k, p in enumerate(polygons) if k != i
+                ):
                     valid_segments.append((start, end))
-                    t.up()
-                    t.goto(start)
-                    t.down()
-                    t.goto(end)
 
-    result = list(dict.fromkeys([pt for seg in valid_segments for pt in seg]))
-    return result
+    loops = find_loops(valid_segments)
 
+    outer_idx = -1
+    min_x = float('inf')
+    for idx, loop in enumerate(loops):
+        for x, y in loop:
+            if x < min_x:
+                min_x = x
+                outer_idx = idx
 
-def get_input_polygons():
-    count = int(input('Сколько фигур будет? '))
-    polygons = []
-    print(f'Введите {count} список(а) координат в формате [(x1, y1), (x2, y2), ...]:')
-    for i in range(count):
-        raw_data = input(f'Фигура {i+1}: ')
-        poly = ast.literal_eval(raw_data)
-        polygons.append(poly)
-    return polygons
+    for idx, loop in enumerate(loops):
+        is_outer = (idx == outer_idx)
+        area = get_polygon_area(loop)
 
+        formatted_coords = [tuple(round(c, 2) for c in p) for p in loop]
 
-test1 = [
-    [(0, 0), (100, 0), (100, 100), (0, 100)],
-    [(40, -20), (60, -20), (60, 120), (40, 120)]
-]
+        if is_outer:
+            if area > 0:
+                loop.reverse()
+            t.pencolor("red")
+            t.pensize(3)
+            print(f"Внешний периметр. Координаты:{formatted_coords}")
+        else:
+            if area < 0:
+                loop.reverse()
+            t.pencolor("blue")
+            t.pensize(2)
+            print(f"Найдена дыра. Координаты:"
+                  f'{formatted_coords}'
+                  )
 
-test2 = [
-    [(0, 0), (150, 0), (150, 100), (0, 100)],
-    [(50, -20), (70, -20), (70, 120), (50, 120)],
-    [(100, -20), (120, -20), (120, 120), (100, 120)]
-]
+        t.up()
+        t.goto(loop[0][0] * SCALE, loop[0][1] * SCALE)
+        t.down()
+        for pt in loop[1:] + [loop[0]]:
+            t.goto(pt[0] * SCALE, pt[1] * SCALE)
 
-test3 = [
-    [(0, 40), (200, 40), (200, 60), (0, 60)],
-    [(0, 80), (200, 80), (200, 100), (0, 100)],
-    [(40, 0), (60, 0), (60, 200), (40, 200)],
-    [(120, 0), (140, 0), (140, 200), (120, 200)]
-]
-
-test4 = [
-    [(0, 0), (100, 0), (100, 100), (0, 100)],
-    [(50, 50), (150, 50), (150, 150), (50, 150)],
-    [(100, 100), (200, 100), (200, 200), (100, 200)]
-]
-
-test5 = [
-    [(0, 0), (40, 0), (40, 40), (0, 40)],
-    [(30, 30), (70, 30), (70, 70), (30, 70)],
-    [(60, 60), (100, 60), (100, 100), (60, 100)],
-    [(15, 15), (55, 15), (55, 55), (15, 55)],
-    [(45, 45), (85, 45), (85, 85), (45, 85)]
-]
-
-test6 = [
-    [(0, 50), (200, 50), (200, 70), (0, 70)],
-    [(80, 0), (120, 0), (120, 150), (80, 150)]
-]
-
-tests = {
-    'Прямоугольник с отверстием': test1,
-    'Три вертикальных полосы': test2,
-    'Сетка': test3,
-    'Лестница': test4,
-    'Сложная композиция': test5,
-    'Перекрестие': test6,
+    t.hideturtle()
 
 
-}
-
-for name, test_polygons in tests.items():
-    print(f'{name}')
-    print(f'Фигур: {len(test_polygons)}')
-
-    final_points = draw_clean_outline(test_polygons)
-    print(
-        f'Список точек: {final_points}. Количество точек: {len(final_points)}'
-    )
-
-    input('Нажмите Enter для следующего теста...')
-    turtle.clearscreen()
+if __name__ == "__main__":
+    for i, test_polygons in enumerate(all_tests):
+        print(f"\nЗапуск Теста №{i+1}")
+        solve_and_draw(test_polygons)
+        print("Нажми ENTER в консоли для следующего теста...")
+        input() 
+        turtle.clearscreen()
+    print("Все тесты пройдены!")
+    turtle.bye()

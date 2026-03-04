@@ -27,7 +27,8 @@ def is_inside(p, poly):
     n = len(poly)
     inside = False
     for i in range(n):
-        p1x, p1y = poly[i]; p2x, p2y = poly[(i + 1) % n]
+        p1x, p1y = poly[i]
+        p2x, p2y = poly[(i + 1) % n]
         if ((p1y > y) != (p2y > y)) and \
            (x < (p2x - p1x) * (y - p1y) / (p2y - p1y + 1e-10) + p1x):
             inside = not inside
@@ -37,7 +38,8 @@ def is_inside(p, poly):
 def get_polygon_area(poly):
     area = 0
     for i in range(len(poly)):
-        x1, y1 = poly[i]; x2, y2 = poly[(i + 1) % len(poly)]
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % len(poly)]
         area += (x1 * y2 - x2 * y1)
     return area / 2
 
@@ -64,7 +66,8 @@ def solve_and_draw(polygons):
 
             splits = {p1, p2}
             for k, other in enumerate(polygons):
-                if i == k: continue
+                if i == k:
+                    continue
                 for m in range(len(other)):
                     inter = get_intersection(
                         p1, p2, other[m], other[(m + 1) % len(other)]
@@ -79,7 +82,9 @@ def solve_and_draw(polygons):
             for s in range(len(sorted_splits) - 1):
                 start, end = sorted_splits[s], sorted_splits[s+1]
                 mid = ((start[0] + end[0])/2, (start[1] + end[1])/2)
-                if not any(is_inside(mid, p) for k, p in enumerate(polygons) if k != i):
+                if not any(
+                    is_inside(mid, p) for k, p in enumerate(polygons) if k != i
+                ):
                     valid_segments.append((start, end))
 
     unused = list(valid_segments)
@@ -95,8 +100,10 @@ def solve_and_draw(polygons):
         found = False
         for i, (s1, s2) in enumerate(unused):
             if math.dist(last_p, s1) < EPSILON:
-                loop.append(s1); last_p = s2
-                unused.pop(i); found = True
+                loop.append(s1)
+                last_p = s2
+                unused.pop(i)
+                found = True
                 break
             elif math.dist(last_p, s2) < EPSILON:
                 loop.append(s2)
@@ -111,13 +118,19 @@ def solve_and_draw(polygons):
     if area > 0:
         loop.reverse()
 
-    t.pencolor("red"); t.pensize(3)
-    t.up(); t.goto(loop[0][0] * SCALE, loop[0][1] * SCALE); t.down()
+    t.pencolor("red")
+    t.pensize(3)
+    t.up()
+    t.goto(loop[0][0] * SCALE, loop[0][1] * SCALE)
+    t.down()
     for pt in loop[1:] + [loop[0]]:
         t.goto(pt[0] * SCALE, pt[1] * SCALE)
 
     t.hideturtle()
-    print(f"Внешний периметр отрисован. Вершин: {len(loop)}")
+    print(
+        f"Внешний периметр отрисован. Вершин: {len(loop)}"
+        f'Все вершины: {loop}'
+    )
 
 
 if __name__ == "__main__":

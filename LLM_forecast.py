@@ -9,8 +9,35 @@ from datetime import datetime
 import os
 
 
+VALID_VALUE = {
+    'U': (198, 242),
+    'I': (0, 16)
+}
+
+DF = pd.read_sql(
+    "SELECT * FROM data_amperage ORDER BY date_time",
+    engine
+)
+
+
+def valid_data_DB():
+    problems = []
+    for columns in ['U1', 'U2', 'U3', 'I1', 'I2', 'I3']:
+        prefix = columns[0]
+
+        low, high = VALID_VALUE[prefix]
+
+        bad_value = DF[(DF[columns] < low) | (DF[columns] > high)]
+
+        if not bad_value.empty:
+            for index, row in bad_value.iterrows():
+                problems.append(
+                    f'ID: {row["id"]}. Колонна: {columns}. Значение: {row[columns]}'
+                )
+    return problems
+
+
 def upload_data(file_path):
-    """Загружает данные из CSV или Excel в базу данных"""
     if not os.path.exists(file_path):
         print(f"Файл {file_path} не найден")
         return
@@ -32,21 +59,27 @@ def upload_data(file_path):
 
 def train_and_predict():
 
-    Base.metadata.create_all(engine)
+    errors = valid_data_DB()
 
-    df = pd.read_sql(
-        "SELECT U1, U2, U3, I1, I2, I3 FROM data_amperage ORDER BY date_time",
-        engine
-    )
+    if errors:
+        print("\n Ошибка в БД")
+        print(f"В базе данных обнаружено {len(errors)} недопустимых значений.")
+        for err in errors:
+            print(f"{err}")
+            print('Обучение остановленно')
+        return
 
-    if len(df) < 110:
+    features = ['U1', 'U2', 'U3', 'I1', 'I2', 'I3']
+    df_numeric = DF[features]
+
+    if len(df_numeric) < 110:
         print(
             "Недостаточно данных в БД для обучения (нужно хотя бы 110 строк)."
         )
         return
 
     scaler = MinMaxScaler()
-    data_scaled = scaler.fit_transform(df)
+    data_scaled = scaler.fit_transform(df_numeric)
 
     WINDOW_SIZE = 100
 
@@ -65,13 +98,7 @@ def train_and_predict():
     print("Начинаю обучение...")
     model.fit(X, y, epochs=20, batch_size=32, verbose=1)
 
-    last_raw_data = df.tail(WINDOW_SIZE)
-
-    if (last_raw_data == 0).any().any():
-        print(
-            f'ВНИМАНИЕ: В последних данных обнаружены нули.'
-            f'Прогноз может быть неточным.'
-        )
+    last_raw_data = df_numeric.tail(WINDOW_SIZE)
 
     last_window_scaled = scaler.transform(last_raw_data)
     last_window_scaled = np.expand_dims(last_window_scaled, axis=0)
@@ -80,7 +107,7 @@ def train_and_predict():
     prediction_real = scaler.inverse_transform(prediction_scaled)
 
     print("\n Прогноз следующей записи (U1, U2, U3, I1, I2, I3):")
-    print(prediction_real)
+    print(np.round(prediction_real, 2))
 
 
 if __name__ == "__main__":

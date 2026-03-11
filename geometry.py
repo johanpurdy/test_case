@@ -1,10 +1,46 @@
 import turtle
+import random
 import math
 from test_figure import all_tests
 
-SCALE = 2.5
+SCALE = 5
 DRAW_SPEED = 3
 EPSILON = 1e-5
+
+
+def generate_random_convex_poly(
+        cx,
+        cy,
+        min_radius=30,
+        max_radius=60,
+        num_vertices=None
+):
+    if num_vertices is None:
+        num_vertices = random.randint(3, 8)
+
+    angles = sorted(
+        [random.uniform(0, 2 * math.pi) for _ in range(num_vertices)]
+    )
+
+    poly = []
+    for angle in angles:
+        r = random.uniform(min_radius, max_radius)
+        x = cx + r * math.cos(angle)
+        y = cy + r * math.sin(angle)
+        poly.append((round(x, 1), round(y, 1)))
+
+    return poly
+
+
+def generate_complex_test_scene(num_figures=3):
+    all_polygons = []
+    for _ in range(num_figures):
+        cx = random.randint(-30, 30)
+        cy = random.randint(-20, 20)
+
+        poly = generate_random_convex_poly(cx, cy)
+        all_polygons.append(poly)
+    return all_polygons
 
 
 def get_intersection(p1, p2, p3, p4):
@@ -45,6 +81,7 @@ def get_polygon_area(poly):
 
 
 def solve_and_draw(polygons):
+
     t = turtle.Turtle()
     t.speed(DRAW_SPEED)
 
@@ -134,10 +171,16 @@ def solve_and_draw(polygons):
 
 
 if __name__ == "__main__":
-    for i, test_polygons in enumerate(all_tests):
-        print(f"\nЗапуск Теста №{i+1}")
+    for i in range(10):
+        print(f"\nТест №{i+1}")
+
+        test_polygons = generate_complex_test_scene(
+            num_figures=random.randint(5, 10)
+        )
+
         solve_and_draw(test_polygons)
-        print("Нажми ENTER для следующего теста...")
+
+        print("Нажми ENTER для следующей генерации...")
         input()
         turtle.clearscreen()
     turtle.bye()

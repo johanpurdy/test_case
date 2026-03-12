@@ -13,14 +13,16 @@ class DataAmperage(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    U1: Mapped[int] = mapped_column(Integer, nullable=True)
-    U2: Mapped[int] = mapped_column(Integer, nullable=True)
-    U3: Mapped[int] = mapped_column(Integer, nullable=True)
-    I1: Mapped[int] = mapped_column(Integer, nullable=True)
-    I2: Mapped[int] = mapped_column(Integer, nullable=True)
-    I3: Mapped[int] = mapped_column(Integer, nullable=True)
-    date_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    U1: Mapped[int] = mapped_column(Integer, nullable=False)
+    U2: Mapped[int] = mapped_column(Integer, nullable=False)
+    U3: Mapped[int] = mapped_column(Integer, nullable=False)
+    I1: Mapped[int] = mapped_column(Integer, nullable=False)
+    I2: Mapped[int] = mapped_column(Integer, nullable=False)
+    I3: Mapped[int] = mapped_column(Integer, nullable=False)
+    date_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
-engine = create_engine("mysql+pymysql://root:123456@localhost/my_measurements")
-Base.metadata.create_all(engine)
+engine = create_engine("mysql+pymysql://root:root1234@localhost/measurements")
+if __name__ == "__main__":
+    Base.metadata.create_all(engine)
+    print("Таблицы созданы")

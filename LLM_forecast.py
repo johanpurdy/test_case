@@ -4,14 +4,14 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import GRU, Dense
 from sklearn.preprocessing import MinMaxScaler
-from models import engine, Base
+from models import engine
 from datetime import datetime
 import os
 
 
 VALID_VALUE = {
     'U': (198, 242),
-    'I': (9, 50)
+    'I': (5, 50)
 }
 
 DF = pd.read_sql(
@@ -114,6 +114,5 @@ def train_and_predict():
 
 if __name__ == "__main__":
 
-    # upload_data("my_file_1000.csv")
-
+    # upload_data("my_data_1000.csv")
     train_and_predict()

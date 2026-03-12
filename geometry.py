@@ -1,14 +1,13 @@
 import turtle
 import random
 import math
-from test_figure import all_tests
 
-SCALE = 5
-DRAW_SPEED = 3
+
+DRAW_SPEED = 15
 EPSILON = 1e-5
 
 
-def generate_random_convex_poly(
+def generate_random_poly(
         cx,
         cy,
         min_radius=30,
@@ -38,7 +37,7 @@ def generate_complex_test_scene(num_figures=3):
         cx = random.randint(-30, 30)
         cy = random.randint(-20, 20)
 
-        poly = generate_random_convex_poly(cx, cy)
+        poly = generate_random_poly(cx, cy)
         all_polygons.append(poly)
     return all_polygons
 
@@ -80,7 +79,27 @@ def get_polygon_area(poly):
     return area / 2
 
 
+def get_bounds(polygons):
+    all_points = [pt for poly in polygons for pt in poly]
+    if not all_points:
+        return -100, 100, -100, 100
+    xs = [p[0] for p in all_points]
+    ys = [p[1] for p in all_points]
+
+    return min(xs), max(xs), min(ys), max(ys)
+
+
 def solve_and_draw(polygons):
+    screen = turtle.Screen()
+    min_x, max_x, min_y, max_y = get_bounds(polygons)
+    margin = 20
+
+    screen.setworldcoordinates(
+        min_x - margin,
+        min_y - margin,
+        max_x + margin,
+        max_y + margin
+    )
 
     t = turtle.Turtle()
     t.speed(DRAW_SPEED)
@@ -88,10 +107,10 @@ def solve_and_draw(polygons):
     t.pencolor("lightgray")
     for poly in polygons:
         t.up()
-        t.goto(poly[0][0] * SCALE, poly[0][1] * SCALE)
+        t.goto(poly[0][0], poly[0][1])
         t.down()
         for x, y in poly[1:] + [poly[0]]:
-            t.goto(x * SCALE, y * SCALE)
+            t.goto(x, y)
 
     valid_segments = []
     for i, poly in enumerate(polygons):
@@ -158,10 +177,10 @@ def solve_and_draw(polygons):
     t.pencolor("red")
     t.pensize(3)
     t.up()
-    t.goto(loop[0][0] * SCALE, loop[0][1] * SCALE)
+    t.goto(loop[0][0], loop[0][1])
     t.down()
     for pt in loop[1:] + [loop[0]]:
-        t.goto(pt[0] * SCALE, pt[1] * SCALE)
+        t.goto(pt[0], pt[1])
 
     t.hideturtle()
     print(
@@ -175,7 +194,7 @@ if __name__ == "__main__":
         print(f"\nТест №{i+1}")
 
         test_polygons = generate_complex_test_scene(
-            num_figures=random.randint(5, 10)
+            num_figures=100
         )
 
         solve_and_draw(test_polygons)

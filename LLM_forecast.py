@@ -11,7 +11,7 @@ import os
 
 VALID_VALUE = {
     'U': (198, 242),
-    'I': (0, 16)
+    'I': (9, 50)
 }
 
 DF = pd.read_sql(
@@ -23,10 +23,9 @@ DF = pd.read_sql(
 def valid_data_DB():
     problems = []
     for columns in ['U1', 'U2', 'U3', 'I1', 'I2', 'I3']:
+
         prefix = columns[0]
-
         low, high = VALID_VALUE[prefix]
-
         bad_value = DF[(DF[columns] < low) | (DF[columns] > high)]
 
         if not bad_value.empty:
@@ -63,7 +62,10 @@ def train_and_predict():
 
     if errors:
         print("\n Ошибка в БД")
-        print(f"В базе данных обнаружено {len(errors)} недопустимых значений.")
+        print(
+            f"В базе данных обнаружено {len(errors)} недопустимых значений."
+            f"Возможны ошибки в обучении и прогнозе."
+        )
         for err in errors:
             print(f"{err}")
             print('Обучение остановленно')

@@ -105,11 +105,34 @@ def train_and_predict():
     last_window_scaled = scaler.transform(last_raw_data)
     last_window_scaled = np.expand_dims(last_window_scaled, axis=0)
 
-    prediction_scaled = model.predict(last_window_scaled)
-    prediction_real = scaler.inverse_transform(prediction_scaled)
+    all_predictions = []
+    for _ in range(20):
+        prediction_scaled = model.predict(last_window_scaled, verbose=0)
+        prediction_real = scaler.inverse_transform(prediction_scaled)
+        all_predictions.append(prediction_real[0])
 
-    print("\n Прогноз следующей записи (U1, U2, U3, I1, I2, I3):")
-    print(np.round(prediction_real, 2))
+        df_predict = pd.DataFrame(prediction_real, columns=features)
+        df_predict['date_time'] = datetime.now()
+
+        df_predict.to_sql(
+            'data_amperage',
+            con=engine,
+            if_exists='append',
+            index=False
+        )
+
+        new_step = np.expand_dims(
+            prediction_scaled,
+            axis=1
+        )
+        last_window_scaled = np.append(
+            last_window_scaled[:, 1:, :],
+            new_step,
+            axis=1
+        )
+        df_res = pd.DataFrame(all_predictions, columns=features)
+        print("\nРезультат прогноза.")
+        print(df_res.round(2))
 
 
 if __name__ == "__main__":

@@ -19,14 +19,20 @@ DF = pd.read_sql(
     engine
 )
 
+COUNT_PREDICTION = 20
 
-def valid_data_DB():
+
+def valid_data_DB(last_n=None):
+    df_to_check = DF.tail(last_n) if last_n else DF
     problems = []
+
     for columns in ['U1', 'U2', 'U3', 'I1', 'I2', 'I3']:
 
         prefix = columns[0]
         low, high = VALID_VALUE[prefix]
-        bad_value = DF[(DF[columns] < low) | (DF[columns] > high)]
+        bad_value = df_to_check[
+            (df_to_check[columns] < low) | (df_to_check[columns] > high)
+        ]
 
         if not bad_value.empty:
             for index, row in bad_value.iterrows():
@@ -106,7 +112,7 @@ def train_and_predict():
     last_window_scaled = np.expand_dims(last_window_scaled, axis=0)
 
     all_predictions = []
-    for _ in range(20):
+    for _ in range(COUNT_PREDICTION):
         prediction_scaled = model.predict(last_window_scaled, verbose=0)
         prediction_real = scaler.inverse_transform(prediction_scaled)
         all_predictions.append(prediction_real[0])
@@ -130,10 +136,16 @@ def train_and_predict():
             new_step,
             axis=1
         )
-        df_res = pd.DataFrame(all_predictions, columns=features)
-        print("\nРезультат прогноза.")
-        print(df_res.round(2))
 
+    df_res = pd.DataFrame(all_predictions, columns=features)
+    errors_after_pr = valid_data_DB(COUNT_PREDICTION)
+    if errors_after_pr:
+        print('\nВнимание: Есть ошибки в прогнозе модели.')
+        for err in errors_after_pr:
+            print(err)
+        return 'Обнаружены аномалии в предсказанных данных.'
+    print("\nРезультат прогноза.")
+    print(df_res.round(2))
 
 if __name__ == "__main__":
 
